@@ -1,0 +1,213 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "Reality Composer Pro Version 1.0 (413)"
+    }
+    defaultPrim = "Root"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "Root"
+{
+    def "gantry" (
+        active = true
+        references = @gantry.usdc@
+    )
+    {
+        float3 xformOp:scale = (100, 100, 100)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        over "Gantry_Mesh" (
+            references = None
+        )
+        {
+            over "Gantry_Chipped_Paint_01_Mat" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </Root/chipped_paint_gantry_mat> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+            }
+
+            over "Gantry_Tile_03_Mat" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </Root/gantry_3_mat> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+            }
+
+            over "Gantry_FlatBase" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </Root/gantry_flatbase_mat> (
+                    bindMaterialAs = "weakerThanDescendants"
+                )
+            }
+        }
+    }
+
+    def "chipped_paint_gantry_mat" (
+        active = true
+        prepend references = @chipped_paint_gantry_mat.usda@
+    )
+    {
+        float2 ui:nodegraph:realitykit:subgraphOutputs:size = (181.5, 99)
+
+        over "PreviewSurface"
+        {
+            float2 ui:nodegraph:node:size = (159.5, 307)
+        }
+
+        over "Texcoord"
+        {
+            float2 ui:nodegraph:node:size = (180.5, 53)
+        }
+
+        over "TiledImage_3"
+        {
+            float2 ui:nodegraph:node:size = (250, 355)
+        }
+
+        over "Image"
+        {
+            float2 ui:nodegraph:node:size = (250, 319)
+        }
+
+        over "Texcoord_2"
+        {
+            float2 ui:nodegraph:node:size = (180.5, 53)
+        }
+
+        over "Multiply"
+        {
+            float2 ui:nodegraph:node:size = (60, 36)
+        }
+
+        over "Image_1"
+        {
+            float2 ui:nodegraph:node:size = (250, 319)
+        }
+
+        over "Separate3"
+        {
+            float2 ui:nodegraph:node:size = (115.5, 145)
+        }
+
+        over "TiledImage"
+        {
+            float2 ui:nodegraph:node:size = (250, 355)
+        }
+    }
+
+    def "gantry_3_mat" (
+        active = true
+        prepend references = @gantry_3_mat.usda@
+    )
+    {
+        float2 ui:nodegraph:realitykit:subgraphOutputs:size = (181.5, 99)
+
+        over "PreviewSurface"
+        {
+            float2 ui:nodegraph:node:size = (159.5, 307)
+        }
+
+        over "Texcoord"
+        {
+            float2 ui:nodegraph:node:size = (180.5, 53)
+        }
+
+        over "TiledImage"
+        {
+            float2 ui:nodegraph:node:size = (250, 355)
+        }
+
+        over "TiledImage_1"
+        {
+            float2 ui:nodegraph:node:size = (250, 355)
+        }
+
+        over "Image_1"
+        {
+            float2 ui:nodegraph:node:size = (250, 319)
+        }
+
+        over "Separate3"
+        {
+            float2 ui:nodegraph:node:size = (115.5, 145)
+        }
+
+        over "Multiply"
+        {
+            float2 ui:nodegraph:node:size = (60, 36)
+        }
+
+        over "Texcoord_2"
+        {
+            float2 ui:nodegraph:node:size = (180.5, 53)
+        }
+
+        over "Image"
+        {
+            float2 ui:nodegraph:node:size = (250, 319)
+        }
+    }
+
+    def "gantry_flatbase_mat" (
+        active = true
+        prepend references = @gantry_flatbase_mat.usda@
+    )
+    {
+        float2 ui:nodegraph:realitykit:subgraphOutputs:size = (181.5, 99)
+
+        over "PreviewSurface"
+        {
+            float2 ui:nodegraph:node:size = (159.5, 307)
+        }
+
+        over "Texcoord"
+        {
+            float2 ui:nodegraph:node:size = (180.5, 53)
+        }
+
+        over "TiledImage"
+        {
+            float2 ui:nodegraph:node:size = (250, 355)
+        }
+
+        over "TiledImage_1"
+        {
+            float2 ui:nodegraph:node:size = (250, 355)
+        }
+
+        over "Image_1"
+        {
+            float2 ui:nodegraph:node:size = (250, 319)
+        }
+
+        over "Separate3"
+        {
+            float2 ui:nodegraph:node:size = (115.5, 145)
+        }
+
+        over "Multiply"
+        {
+            float2 ui:nodegraph:node:size = (60, 36)
+        }
+
+        over "Texcoord_2"
+        {
+            float2 ui:nodegraph:node:size = (180.5, 53)
+        }
+
+        over "Image"
+        {
+            float2 ui:nodegraph:node:size = (250, 319)
+        }
+    }
+}
+

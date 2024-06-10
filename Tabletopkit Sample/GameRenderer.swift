@@ -1,0 +1,166 @@
+/*
+See the LICENSE.txt file for this sample’s licensing information.
+
+Abstract:
+Render objects other than equipment.
+*/
+import TabletopKit
+import RealityKit
+import SwiftUI
+import TabletopGameSampleContent
+
+@MainActor
+class GameRenderer: TabletopGame.RenderDelegate {
+    let cursorEntity: Entity
+    let root: Entity = .init()
+    var cuteBots: [Entity] = []
+    // The root offset controls the height of the table inside the app volume.
+    let rootOffset: Vector3D = .init(x: 0, y: -0.2, z: 0)
+    weak var game: Game?
+    var assignedCutebotIndex: Int = 0
+    
+    init() {
+        // Move everything down within the volume so the tabletop is easier to see.
+        root.transform.translation = .init(rootOffset)
+        
+        // Create a cursor mesh to show when a player hovers over a tile or group.
+        self.cursorEntity = ModelEntity.cursor
+        self.cursorEntity.setParent(root)
+
+        Task {
+            await loadAssets()
+        }
+    }
+    
+    func loadAssets() async {
+        // The static_scene asset contains the table, board, and the gantry with the static robot.
+        let tableEntity = try! await Entity(named: "static_scene", in: tabletopGameSampleContentBundle)
+        tableEntity.setParent(root)
+        
+        // Load the smaller robots separately because they animate independently.
+        let cuteBotTransforms: [(String, Transform)] = [
+            ("cutebot_01", .init(translation: .init(x: -0.3, y: 0.019, z: 0.3)) ),
+            ("cutebot_02", .init(rotation: .init(angle: (.pi / 2), axis: .init(x: 0, y: 1, z: 0)), translation: .init(x: 0.3, y: 0.019, z: 0.3))),
+            ("cutebot_03", .init(rotation: .init(angle: (-.pi / 2), axis: .init(x: 0, y: 1, z: 0)), translation: .init(x: -0.3, y: 0.019, z: -0.3)))
+        ]
+        
+        cuteBots = .init(repeating: Entity(), count: cuteBotTransforms.count)
+        for index in 0...cuteBotTransforms.count - 1 {
+            let bot = cuteBotTransforms[index]
+            let botName = bot.0
+            cuteBots[index] = try! await Entity(named: "\(botName)_assembly", in: tabletopGameSampleContentBundle)
+            
+            var libComponent = AnimationLibraryComponent()
+            for animationState in PlayerPawn.AnimationState.allCases {
+                let rootEntity = try! await Entity(named: "anim_\(animationState.rawValue)_\(botName)", in: tabletopGameSampleContentBundle)
+                if let animationEntity = rootEntity.findEntity(named: "cutebot_bind") {
+                    if let animation = animationEntity.availableAnimations.first {
+                        libComponent[animationState.rawValue] = animation
+                    }
+                } else {
+                    fatalError("Didn't find animation entity for \(animationState.rawValue) for \(botName)")
+                }
+            }
+            cuteBots[index].components.set(libComponent)
+            // Start off with each robot doing the idle animation on loop until an interaction occurs.
+            if let idle = getAnimation(entity: cuteBots[index], animation: .idleA) {
+                playAnimation(entity: cuteBots[index], animation: idle.repeat())
+            }
+            
+            var billboardComponent = BillboardComponent()
+            billboardComponent.rotationAxis = .init(x: 0, y: 1, z: 0)
+            cuteBots[index].components.set(billboardComponent)
+            
+            cuteBots[index].transform = bot.1
+            
+            cuteBots[index].setParent(tableEntity)
+        }
+    }
+
+    func onUpdate(timeInterval: TimeInterval, snapshot: TableSnapshot, visualState: TableVisualState) {
+        // If you don't have a seat, claim a new one.
+        if let game = self.game {
+           if snapshot.seat(of: PlayerSeat.self, for: game.tabletopGame.localPlayer) == nil {
+               game.tabletopGame.claimAnySeat()
+           }
+        }
+    }
+    
+    var cursorTransform: Transform? = nil {
+        willSet(newValue) {
+            if cursorTransform == newValue {
+                return
+            }
+
+            if cursorTransform == nil, let newValue {
+                // When the cursor turns on, snap to the supplied position.
+                cursorEntity.transform = newValue
+                cursorEntity.isEnabled = true
+            } else if let newValue {
+                // Animate while the cursor is on.
+                cursorEntity.move(to: newValue, relativeTo: root, duration: 0.1, timingFunction: .easeInOut)
+            } else if newValue == nil {
+                // Turn the cursor off.
+                cursorEntity.isEnabled = false
+            }
+        }
+    }
+
+    func getAnimation(entity: Entity, animation: PlayerPawn.AnimationState) -> AnimationResource? {
+        if let component = entity.components[AnimationLibraryComponent.self] {
+            return component[animation.rawValue]
+        }
+        return nil
+    }
+    
+    func playAnimation(entity: Entity, animation: AnimationResource) {
+        if let rigGroup = entity.findEntity(named: "cutebot_bind") {
+            rigGroup.playAnimation(animation, transitionDuration: 1, startsPaused: false)
+        }
+    }
+    
+    func playAnimationForTile(category: ConveyorTile.Category, cuteBotColor: PlayerPawn.CuteBotColor) {
+        let cuteBotEntity = cuteBotEntity(for: cuteBotColor)
+        switch category {
+            case .green:
+                if let celebrate = getAnimation(entity: cuteBotEntity, animation: .jumpJoy),
+                   let idle = getAnimation(entity: cuteBotEntity, animation: .idleA) {
+                        playAnimation(entity: cuteBotEntity, animation: try! .sequence(with: [celebrate, idle.repeat()]))
+                }
+            case .grey:
+                // Just keep idling.
+                break
+            case .red:
+                if let sad = getAnimation(entity: cuteBotEntity, animation: .sad),
+                   let idle = getAnimation(entity: cuteBotEntity, animation: .idleA) {
+                        playAnimation(entity: cuteBotEntity, animation: try! .sequence(with: [sad, idle.repeat()]))
+                }
+        }
+    }
+
+    func cuteBotEntity(for cuteBotColor: PlayerPawn.CuteBotColor) -> Entity {
+        switch cuteBotColor {
+        case .red:
+            return cuteBots[0]
+        case .blue:
+            return cuteBots[1]
+        case .purple:
+            return cuteBots[2]
+        }
+    }
+}
+
+extension ModelEntity {
+    static var cursor: ModelEntity {
+        let cursorMesh = MeshResource.generateCylinder(height: 0.01, radius: 0.02)
+        let cursorEntity = ModelEntity(mesh: cursorMesh)
+        cursorEntity.name = "cursor"
+        cursorEntity.isEnabled = false
+        var cursorMaterial = PhysicallyBasedMaterial()
+        cursorMaterial.baseColor = PhysicallyBasedMaterial.BaseColor(tint: .init(white: 0, alpha: 0.3))
+        cursorMaterial.roughness = PhysicallyBasedMaterial.Roughness(floatLiteral: 1)
+        cursorMaterial.blending = .transparent(opacity: 0.3)
+        cursorEntity.model!.materials.append(cursorMaterial)
+        return cursorEntity
+    }
+}
