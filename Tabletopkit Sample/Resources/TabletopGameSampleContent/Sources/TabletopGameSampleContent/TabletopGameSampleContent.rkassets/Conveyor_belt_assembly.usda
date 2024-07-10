@@ -10,59 +10,7 @@
 
 def Xform "Root"
 {
-    def "conveyor_belt" (
-        active = true
-        customData = {
-            float3 rotationEulerHint = (0, 0, 0)
-        }
-        references = @conveyor_belt.usdc@
-    )
-    {
-        quatf xformOp:orient = (1, 0, 0, 0)
-        float3 xformOp:scale = (1, 1, 1)
-        float3 xformOp:translate = (0, 0, 0)
-        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
-
-        over "Conveyor_Belt_Mesh"
-        {
-            over "Conveyor_Tile_03_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
-            )
-            {
-                rel material:binding = </Root/conveyor_3_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
-
-            over "Conveyor_Conveyor_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
-            )
-            {
-                rel material:binding = </Root/conveyor_1_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
-
-            over "Conveyor_Tile_02_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
-            )
-            {
-                rel material:binding = </Root/conveyor_2_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
-
-            over "Conveyor_Conveyor_Decals_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
-            )
-            {
-                rel material:binding = </Root/conveyor_decal_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
-        }
-    }
-
+    reorder nameChildren = ["Conveyor_Belt", "conveyor_1_mat", "conveyor_2_mat", "conveyor_3_mat", "conveyor_decal_mat"]
     def "conveyor_1_mat" (
         active = true
         references = @conveyor_1_mat.usda@
@@ -89,6 +37,55 @@ def Xform "Root"
         references = @conveyor_decal_mat.usda@
     )
     {
+    }
+
+    def "Conveyor_Belt" (
+        active = true
+        references = @Conveyor_Belt.usdc@
+    )
+    {
+        float3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+        over "Conveyor_BeltSG" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/conveyor_1_mat> (
+                bindMaterialAs = "weakerThanDescendants"
+            )
+        }
+
+        over "Conveyor_BeltSG1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/conveyor_1_mat> (
+                bindMaterialAs = "weakerThanDescendants"
+            )
+        }
+
+        over "Conveyor_BeltSG2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/conveyor_3_mat> (
+                bindMaterialAs = "weakerThanDescendants"
+            )
+        }
+
+        over "Conveyor_BeltSG3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/conveyor_decal_mat> (
+                bindMaterialAs = "weakerThanDescendants"
+            )
+        }
     }
 }
 

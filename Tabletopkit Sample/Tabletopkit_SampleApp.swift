@@ -18,8 +18,7 @@ struct SampleApp: App {
             GameView().volumeBaseplateVisibility(.hidden)
         }
         .windowStyle(.volumetric)
-        // Make the volume bigger so it doesn't clip the table assets.
-        .defaultSize(width: 1.5, height: 2, depth: 1.5, in: .meters)
+        .defaultSize(width: 1.5, height: 1.5, depth: 1.5, in: .meters)
     }
 }
 
@@ -37,6 +36,8 @@ struct GameView: View {
             if let loadedGame = game, activityManager != nil {
                 RealityView { (content: inout RealityViewContent) in
                     content.entities.append(loadedGame.renderer.root)
+                    content.add(loadedGame.renderer.portalWorld)
+                    content.add(loadedGame.renderer.portal)
                 }.toolbar {
                     GameToolbar(game: loadedGame)
                 }.tabletopGame(loadedGame.tabletopGame, parent: loadedGame.renderer.root) { _ in

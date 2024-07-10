@@ -8,52 +8,14 @@
     upAxis = "Y"
 )
 
-def Xform "Root"
+def Xform "Root" (
+    references = None
+)
 {
-    def "gantry" (
-        active = true
-        references = @gantry.usdc@
-    )
-    {
-        float3 xformOp:scale = (100, 100, 100)
-        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
-
-        over "Gantry_Mesh" (
-            references = None
-        )
-        {
-            over "Gantry_Chipped_Paint_01_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
-            )
-            {
-                rel material:binding = </Root/chipped_paint_gantry_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
-
-            over "Gantry_Tile_03_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
-            )
-            {
-                rel material:binding = </Root/gantry_3_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
-
-            over "Gantry_FlatBase" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
-            )
-            {
-                rel material:binding = </Root/gantry_flatbase_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
-        }
-    }
-
+    reorder nameChildren = ["Gantry", "chipped_paint_gantry_mat", "gantry_3_mat", "gantry_flatbase_mat"]
     def "chipped_paint_gantry_mat" (
         active = true
-        prepend references = @chipped_paint_gantry_mat.usda@
+        references = @chipped_paint_gantry_mat.usda@
     )
     {
         float2 ui:nodegraph:realitykit:subgraphOutputs:size = (181.5, 99)
@@ -159,7 +121,7 @@ def Xform "Root"
 
     def "gantry_flatbase_mat" (
         active = true
-        prepend references = @gantry_flatbase_mat.usda@
+        references = @gantry_flatbase_mat.usda@
     )
     {
         float2 ui:nodegraph:realitykit:subgraphOutputs:size = (181.5, 99)
@@ -207,6 +169,53 @@ def Xform "Root"
         over "Image"
         {
             float2 ui:nodegraph:node:size = (250, 319)
+        }
+    }
+
+    def "Gantry" (
+        active = true
+        references = @Gantry.usdc@
+    )
+    {
+        float3 xformOp:scale = (0.01, 0.01, 0.01)
+
+        over "Looks"
+        {
+            over "board_flatbase_mat" (
+                references = None
+            )
+            {
+            }
+        }
+
+        over "GantrySG" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/gantry_flatbase_mat> (
+                bindMaterialAs = "weakerThanDescendants"
+            )
+        }
+
+        over "GantrySG1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/gantry_3_mat> (
+                bindMaterialAs = "weakerThanDescendants"
+            )
+        }
+
+        over "GantrySG3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/chipped_paint_gantry_mat> (
+                bindMaterialAs = "weakerThanDescendants"
+            )
         }
     }
 }

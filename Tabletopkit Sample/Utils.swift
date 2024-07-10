@@ -18,7 +18,11 @@ extension Double {
 extension TableVisualState.Point2D {
     static func lerp(lhs: Self, rhs: Self, factor: Double) -> Self {
         .init(x: Double.lerp(lhs: lhs.x, rhs: rhs.x, factor: factor),
-              y: Double.lerp(lhs: lhs.y, rhs: rhs.y, factor: factor))
+              z: Double.lerp(lhs: lhs.z, rhs: rhs.z, factor: factor))
+    }
+    
+    static func + (lhs: TableVisualState.Point2D, rhs: TableVisualState.Point2D) -> TableVisualState.Point2D {
+        return TableVisualState.Point2D(x: lhs.x + rhs.x, z: lhs.z + rhs.z)
     }
 }
 
@@ -29,18 +33,18 @@ extension TableVisualState.Pose2D {
     }
 }
 
-func transformPoint(pose: TableVisualState.Pose2D, point: SIMD2<Double>) -> SIMD2<Double> {
+func transformPoint(pose: TableVisualState.Pose2D, point: TableVisualState.Point2D) -> TableVisualState.Point2D {
     let sinTheta = sin(pose.rotation)
     let cosTheta = cos(pose.rotation)
-    let rotatedP = simd_double2(x: point.x * cosTheta + point.y * sinTheta,
-                                y: point.x * -sinTheta + point.y * cosTheta)
-    return rotatedP + pose.position.vector
+    let rotatedP = simd_double2(x: point.x * cosTheta + point.z * sinTheta,
+                                y: point.x * -sinTheta + point.z * cosTheta)
+    return TableVisualState.Point2D(x: rotatedP.x, z: rotatedP.y) + pose.position
 }
 
 extension TableVisualState.Pose2D {
     static func * (lhs: TableVisualState.Pose2D, rhs: TableVisualState.Pose2D) -> TableVisualState.Pose2D {
-        let position = transformPoint(pose: rhs, point: lhs.position.vector)
+        let position = transformPoint(pose: rhs, point: lhs.position)
         let rotation = lhs.rotation + rhs.rotation
-        return TableVisualState.Pose2D(position: .init(vector: position), rotation: rotation)
+        return TableVisualState.Pose2D(position: position, rotation: rotation)
     }
 }

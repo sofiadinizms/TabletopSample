@@ -7,11 +7,11 @@ An object to respond to player interactions and update gameplay.
 import TabletopKit
 import RealityKit
 
-struct GameInteraction: TabletopInteraction {
+struct GameInteraction: TabletopInteraction.Delegate {
     let game: Game
     
     @MainActor
-    mutating func updateCursor(_ proposedDestination: EquipmentIdentifier?, snapshot: TableSnapshot, valid: Bool = false) {
+    mutating func updateCursor(_ proposedDestination: EquipmentIdentifier?, valid: Bool = false) {
         if let proposedDestination, let tile = game.tabletopGame.equipment(of: ConveyorTile.self, matching: proposedDestination) {
             // Transform the tile position into table space and place the cursor there.
             let boardToTable = game.setup.board.initialState.pose
@@ -19,62 +19,64 @@ struct GameInteraction: TabletopInteraction {
             let tileToTable = tileToBoard * boardToTable
             game.renderer.cursorTransform = .init(translation: .init(x: Float(tileToTable.position.x),
                                                                      y: GameMetrics.boardHeight,
-                                                                     z: Float(tileToTable.position.y)))
+                                                                     z: Float(tileToTable.position.z)))
         } else {
             game.renderer.cursorTransform = nil
         }
     }
 
-    mutating func update(context: TabletopInteractionContext, value: TabletopInteractionValue) {
-        self.updateCursor(value.proposedDestination.equipmentID, snapshot: context.snapshot)
+    mutating func update(interaction: TabletopKit.TabletopInteraction) {
+        self.updateCursor(interaction.value.proposedDestination?.equipmentID)
         
-        if value.phase == .started {
-            onPhaseStarted(context: context, value: value)
+        if interaction.value.phase == .started {
+            onPhaseStarted(interaction: interaction)
         }
         
-        if value.gesturePhase == .ended {
-            onGesturePhaseEnded(context: context, value: value)
+        if interaction.value.gesturePhase == .ended {
+            onGesturePhaseEnded(interaction: interaction)
         }
 
-        if value.phase == .ended {
+        if interaction.value.phase == .ended {
             // When the interaction is over, turn off the cursor.
-            self.updateCursor(nil, snapshot: context.snapshot)
-            onPhaseEnded(context: context, value: value)
+            self.updateCursor(nil)
+            onPhaseEnded(interaction: interaction)
         }
     }
     
     @MainActor
-    func onPhaseStarted(context: TabletopInteractionContext, value: TabletopInteractionValue) {
-        if game.tabletopGame.equipment(of: PlayerPawn.self, matching: value.startingEquipmentID) != nil {
+    func onPhaseStarted(interaction: TabletopInteraction) {
+        if game.tabletopGame.equipment(of: PlayerPawn.self, matching: interaction.value.startingEquipmentID) != nil {
             // Only allow pawns to move to conveyor tiles.
-            context.allowedDestinations = .restricted(game.tabletopGame.equipment(of: ConveyorTile.self).map(\.id))
+            interaction.setAllowedDestinations(.restricted(game.tabletopGame.equipment(of: ConveyorTile.self).map(\.id)))
         }
 
-        if let card = game.tabletopGame.equipment(of: Card.self, matching: value.startingEquipmentID) {
+        if let card = game.tabletopGame.equipment(of: Card.self, matching: interaction.value.startingEquipmentID) {
             // Only allow cards to move to the local player's hand or the deck.
             var allowedDestinations = game.tabletopGame.equipment(of: CardStockGroup.self).map(\.id)
-            guard let localSeat = context.snapshot.seat(of: PlayerSeat.self, for: game.tabletopGame.localPlayer) else {
-                return
+            game.tabletopGame.withCurrentSnapshot { snapshot in
+                guard let localSeat = snapshot.seat(of: PlayerSeat.self, for: game.tabletopGame.localPlayer) else {
+                    return
+                }
+                let cardGroups = game.tabletopGame.equipment(of: CardGroup.self)
+                for group in cardGroups where group.owner.id == localSeat.0.id {
+                    allowedDestinations.append(group.id)
+                }
+                
+                interaction.setAllowedDestinations(.restricted(allowedDestinations))
             }
-            let cardGroups = game.tabletopGame.equipment(of: CardGroup.self)
-            for group in cardGroups where group.owner.id == localSeat.0.id {
-                allowedDestinations.append(group.id)
-            }
-            
-            context.allowedDestinations = .restricted(allowedDestinations)
             // Use counter action to signal to all players that someone picked up the card.
-            context.addAction(.updateCounter(matching: game.setup.counter.id, value: Int64(card.id.rawValue)))
+            interaction.addAction(.updateCounter(matching: game.setup.counter.id, value: Int64(card.id.rawValue)))
         }
 
-        if game.tabletopGame.equipment(of: Die.self, matching: value.startingEquipmentID) != nil {
+        if game.tabletopGame.equipment(of: Die.self, matching: interaction.value.startingEquipmentID) != nil {
             // Don't let the die land on any other equipment, just the table.
-            context.allowedDestinations = .restricted([])
+            interaction.setAllowedDestinations(.restricted([]))
         }
     }
     
     @MainActor
-    func onGesturePhaseEnded(context: TabletopInteractionContext, value: TabletopInteractionValue) {
-        if let die = game.tabletopGame.equipment(of: Die.self, matching: value.startingEquipmentID) {
+    func onGesturePhaseEnded(interaction: TabletopInteraction) {
+        if let die = game.tabletopGame.equipment(of: Die.self, matching: interaction.value.startingEquipmentID) {
             // Play a sound when a player tosses a die.
             if let audioLibraryComponent = die.entity.components[AudioLibraryComponent.self] {
                 if let soundResource = audioLibraryComponent.resources["dieSoundShort.mp3"] {
@@ -83,37 +85,37 @@ struct GameInteraction: TabletopInteraction {
             }
             // Pick a random value for the result of the die toss and toss the die.
             let nextValue = Int.random(in: 1 ... 6)
-            context.addAction(.updateEquipment(die, state: .init(value: nextValue, entity: die.entity)))
-            context.toss(equipmentID: value.startingEquipmentID, as: die.representation)
+            interaction.addAction(.updateEquipment(die, state: .init(value: nextValue, parentID: .tableID, entity: die.entity)))
+            interaction.toss(equipmentID: interaction.value.startingEquipmentID, as: die.representation)
             // Move the die back to the starting pose on the table after toss animation finishes.
-            context.addAction(.moveEquipment(die, childOf: nil, pose: die.initialState.pose))
+            interaction.addAction(.moveEquipment(matching: die.id, childOf: .tableID, pose: die.initialState.pose))
         }
     }
     
     @MainActor
-    func onPhaseEnded(context: TabletopInteractionContext, value: TabletopInteractionValue) {
+    func onPhaseEnded(interaction: TabletopInteraction) {
         /* If there isn't a proposed destination, there's nothing to do here.
          Objects moving back to their original group animate there smoothly by default. */
-        guard let dst = value.proposedDestination.equipmentID else {
+        guard let dst = interaction.value.proposedDestination else {
             return
         }
         
-        if let pawn = game.tabletopGame.equipment(of: PlayerPawn.self, matching: value.startingEquipmentID) {
+        if let pawn = game.tabletopGame.equipment(of: PlayerPawn.self, matching: interaction.value.startingEquipmentID) {
             // Move the pawn to its new proposed destination with a default pose (centered in new destination).
-            context.addAction(.moveEquipment(pawn, childOf: dst, pose: .init()))
+            interaction.addAction(.moveEquipment(matching: pawn.id, childOf: dst.equipmentID, pose: .init()))
         }
         
-        if let card = game.tabletopGame.equipment(of: Card.self, matching: value.startingEquipmentID) {
+        if let card = game.tabletopGame.equipment(of: Card.self, matching: interaction.value.startingEquipmentID) {
             // If the card moves to the deck, make sure it's face down, and allow any player to pick it up.
             var seatControl: ControllingSeats = .any
             var faceUp = false
             // If the card moves to a player's hand, make sure it's face up, and only allow that player to interact with it.
-            if let dstGroup = game.tabletopGame.equipment(of: CardGroup.self, matching: dst) {
+            if let dstGroup = game.tabletopGame.equipment(of: CardGroup.self, matching: dst.equipmentID) {
                 seatControl = .restricted([dstGroup.owner.id])
                 faceUp = true
             }
-            context.addAction(.updateEquipment(card, faceUp: faceUp, seatControl: seatControl))
-            context.addAction(.moveEquipment(card, childOf: dst))
+            interaction.addAction(.updateEquipment(card, faceUp: faceUp, seatControl: seatControl))
+            interaction.addAction(.moveEquipment(matching: card.id, childOf: dst.equipmentID))
         }
     }
 }

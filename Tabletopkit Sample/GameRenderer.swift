@@ -15,14 +15,15 @@ class GameRenderer: TabletopGame.RenderDelegate {
     let root: Entity = .init()
     var cuteBots: [Entity] = []
     // The root offset controls the height of the table inside the app volume.
-    let rootOffset: Vector3D = .init(x: 0, y: -0.2, z: 0)
+    let rootOffset: Vector3D = .init(x: 0, y: -0.7, z: 0)
     weak var game: Game?
-    var assignedCutebotIndex: Int = 0
+    let portalWorld: Entity = .init()
+    let portal: Entity = .init()
     
     init() {
         // Move everything down within the volume so the tabletop is easier to see.
         root.transform.translation = .init(rootOffset)
-        
+
         // Create a cursor mesh to show when a player hovers over a tile or group.
         self.cursorEntity = ModelEntity.cursor
         self.cursorEntity.setParent(root)
@@ -33,10 +34,32 @@ class GameRenderer: TabletopGame.RenderDelegate {
     }
     
     func loadAssets() async {
-        // The static_scene asset contains the table, board, and the gantry with the static robot.
-        let tableEntity = try! await Entity(named: "static_scene", in: tabletopGameSampleContentBundle)
-        tableEntity.setParent(root)
+        let staticSceneEntity = try! await Entity(named: "static_scene", in: tabletopGameSampleContentBundle)
+        staticSceneEntity.setParent(root)
+
+        let boardCavityEntity = try! await Entity(named: "board_cavity_assembly", in: tabletopGameSampleContentBundle)
+        boardCavityEntity.transform.rotation = .init(angle: -.pi / 2, axis: .init(x: 0, y: 1, z: 0))
+
+        // Set up portal to render the board internals without being clipped to the RealityView volume.
+        // Both `portal` and `portalWorld` need to be added to the RealityView content.
+        portalWorld.components.set(WorldComponent())
+        portalWorld.addChild(boardCavityEntity)
+        portalWorld.transform.translation = .init(rootOffset)
+        portalWorld.transform.translation.y += GameMetrics.tableThickness * 0.5
+        let portalMesh = MeshResource.generateBox(width: 0.6, height: 0, depth: 0.6)
+        let portalEntity = ModelEntity(mesh: portalMesh, materials: [PortalMaterial()])
+        let portalComp = PortalComponent(
+            target: portalWorld,
+            clippingPlane: .init(position: .init(), normal: .init(x: 0, y: -1, z: 0))
+        )
+        portalEntity.components.set(portalComp)
+        portalEntity.transform.translation = .init(rootOffset)
+        portal.addChild(portalEntity)
         
+        await loadCuteBots()
+    }
+
+    func loadCuteBots() async {
         // Load the smaller robots separately because they animate independently.
         let cuteBotTransforms: [(String, Transform)] = [
             ("cutebot_01", .init(translation: .init(x: -0.3, y: 0.019, z: 0.3)) ),
@@ -72,8 +95,7 @@ class GameRenderer: TabletopGame.RenderDelegate {
             cuteBots[index].components.set(billboardComponent)
             
             cuteBots[index].transform = bot.1
-            
-            cuteBots[index].setParent(tableEntity)
+            cuteBots[index].setParent(root)
         }
     }
 

@@ -4,12 +4,11 @@ See the LICENSE.txt file for this sample’s licensing information.
 Abstract:
 A parent container to organize classes for the game.
 */
-@preconcurrency import TabletopKit
+import TabletopKit
 import RealityKit
 import SwiftUI
 import TabletopGameSampleContent
 
-@MainActor
 @Observable
 class Game {
     let tabletopGame: TabletopGame
@@ -17,6 +16,7 @@ class Game {
     let observer: GameObserver
     let setup: GameSetup
 
+    @MainActor
     init() async {
         renderer = GameRenderer()
         setup = GameSetup(root: renderer.root)
@@ -37,9 +37,7 @@ class Game {
     }
     
     deinit {
-        Task {
-            await tabletopGame.removeObserver(observer)
-            await tabletopGame.removeRenderDelegate(renderer)
-        }
+        tabletopGame.removeObserver(observer)
+        tabletopGame.removeRenderDelegate(renderer)
     }
 }

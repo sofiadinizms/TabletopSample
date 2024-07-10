@@ -12,19 +12,7 @@ def Xform "Root" (
     references = None
 )
 {
-    def "table_rectangle" (
-        active = true
-        prepend apiSchemas = ["MaterialBindingAPI"]
-        references = @table_rectangle.usdz@
-    )
-    {
-        rel material:binding = </Root/table_mat> (
-            bindMaterialAs = "strongerThanDescendants"
-        )
-        float3 xformOp:scale = (1, 1, 1)
-        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
-    }
-
+    reorder nameChildren = ["table_rectangle", "table_mat"]
     def "table_mat" (
         active = true
         references = @table_mat.usda@
@@ -75,6 +63,19 @@ def Xform "Root" (
             float2 ui:nodegraph:node:size = (250, 319)
             int ui:nodegraph:node:stackingOrder = 42
         }
+    }
+
+    def "table_rectangle" (
+        active = true
+        prepend apiSchemas = ["MaterialBindingAPI"]
+        references = @table_rectangle.usdc@
+    )
+    {
+        rel material:binding = </Root/table_mat> (
+            bindMaterialAs = "strongerThanDescendants"
+        )
+        float3 xformOp:scale = (1, 1, 1)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
     }
 }
 

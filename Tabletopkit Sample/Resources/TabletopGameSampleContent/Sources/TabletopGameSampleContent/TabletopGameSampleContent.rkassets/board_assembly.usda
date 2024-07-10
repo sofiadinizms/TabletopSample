@@ -8,87 +8,80 @@
     upAxis = "Y"
 )
 
-def Xform "Root"
+def Xform "Root" (
+    references = None
+)
 {
-    def "board" (
+    reorder nameChildren = ["Conveyor_Belt", "Board", "board_1_mat", "board_2_mat", "board_3_mat", "board_window_mat", "board_metalbase_mat", "chipped_paint_board_mat"]
+    def "Board" (
         active = true
-        references = @board.usdc@
+        references = @Board.usdc@
     )
     {
         float3 xformOp:scale = (1, 1, 1)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
-        over "Board_Mesh" (
+        over "BoardSG" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
             references = None
         )
         {
-            over "CutoutCity_Tile_03_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
+            rel material:binding = </Root/board_3_mat> (
+                bindMaterialAs = "weakerThanDescendants"
             )
-            {
-                rel material:binding = </Root/board_3_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
+        }
 
-            over "CutoutCity_Tile_02_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
+        over "BoardSG1" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/board_2_mat> (
+                bindMaterialAs = "weakerThanDescendants"
             )
-            {
-                rel material:binding = </Root/board_2_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
+        }
 
-            over "CutoutCity_Chipped_Paint_01_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
+        over "BoardSG2" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/chipped_paint_board_mat> (
+                bindMaterialAs = "weakerThanDescendants"
             )
-            {
-                rel material:binding = </Root/chipped_paint_board_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
+        }
 
-            over "CutoutCity_WindowGlass_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
+        over "BoardSG3" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/board_window_mat> (
+                bindMaterialAs = "weakerThanDescendants"
             )
-            {
-                rel material:binding = </Root/board_window_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
+        }
 
-            over "CutoutCity_MetalBase_02_Mat" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
+        over "BoardSG4" (
+            prepend apiSchemas = ["MaterialBindingAPI"]
+            references = None
+        )
+        {
+            rel material:binding = </Root/board_metalbase_mat> (
+                bindMaterialAs = "weakerThanDescendants"
             )
-            {
-                rel material:binding = </Root/board_metalbase_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
-
-            over "CutoutCity_FlatBase" (
-                prepend apiSchemas = ["MaterialBindingAPI"]
-                references = None
-            )
-            {
-                rel material:binding = </Root/board_flatbase_mat> (
-                    bindMaterialAs = "weakerThanDescendants"
-                )
-            }
         }
     }
 
     def "board_1_mat" (
         active = true
-        references = @board_1_mat.usda@
+        prepend references = @board_1_mat.usda@
     )
     {
     }
 
     def "board_2_mat" (
         active = true
-        references = @board_2_mat.usda@
+        prepend references = @board_2_mat.usda@
     )
     {
     }
@@ -100,134 +93,25 @@ def Xform "Root"
     {
     }
 
-    def "chipped_paint_board_mat" (
-        active = true
-        prepend references = @chipped_paint_board_mat.usda@
-    )
-    {
-        float2 ui:nodegraph:realitykit:subgraphOutputs:size = (181.5, 99)
-
-        over "PreviewSurface"
-        {
-            float2 ui:nodegraph:node:size = (159.5, 307)
-        }
-
-        over "Texcoord"
-        {
-            float2 ui:nodegraph:node:size = (180.5, 53)
-        }
-
-        over "TiledImage_3"
-        {
-            float2 ui:nodegraph:node:size = (250, 355)
-        }
-
-        over "Image"
-        {
-            float2 ui:nodegraph:node:size = (250, 319)
-        }
-
-        over "Texcoord_2"
-        {
-            float2 ui:nodegraph:node:size = (180.5, 53)
-        }
-
-        over "Multiply"
-        {
-            float2 ui:nodegraph:node:size = (60, 36)
-        }
-
-        over "Image_1"
-        {
-            float2 ui:nodegraph:node:size = (250, 319)
-        }
-
-        over "Separate3"
-        {
-            float2 ui:nodegraph:node:size = (115.5, 145)
-        }
-
-        over "TiledImage"
-        {
-            float2 ui:nodegraph:node:size = (250, 355)
-        }
-    }
-
-    def "board_flatbase_mat" (
-        active = true
-        references = @board_flatbase_mat.usda@
-    )
-    {
-        token outputs:mtlx:surface.connect = </Root/board_flatbase_mat/UnlitSurface.outputs:out>
-        float2 ui:nodegraph:realitykit:subgraphOutputs:pos = (334.6578, 110.94822)
-        float2 ui:nodegraph:realitykit:subgraphOutputs:size = (181.5, 99)
-        int ui:nodegraph:realitykit:subgraphOutputs:stackingOrder = 56
-        float3 xformOp:scale = (1, 1, 1)
-        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
-
-        over "PreviewSurface"
-        {
-            float inputs:clearcoat
-            float inputs:clearcoatRoughness
-            float2 ui:nodegraph:node:size = (159.5, 307)
-        }
-
-        over "Image"
-        {
-            float2 ui:nodegraph:node:size = (250, 319)
-        }
-
-        over "Texcoord"
-        {
-            float2 ui:nodegraph:node:size = (180.5, 53)
-        }
-
-        over "Image_1" (
-            references = None
-        )
-        {
-            color3f inputs:default = (0.1820836, 0.1820836, 0.1820836) (
-                colorSpace = "srgb_displayp3"
-            )
-            int ui:nodegraph:node:stackingOrder = 52
-        }
-
-        def Shader "UnlitSurface" (
-            references = None
-        )
-        {
-            uniform token info:id = "ND_realitykit_unlit_surfaceshader"
-            bool inputs:applyPostProcessToneMap
-            color3f inputs:color = (0, 0, 0) (
-                colorSpace = "srgb_displayp3"
-            )
-            bool inputs:hasPremultipliedAlpha
-            token outputs:out
-            float2 ui:nodegraph:node:pos = (46.634567, 350.23373)
-            int ui:nodegraph:node:stackingOrder = 54
-        }
-    }
-
-    def "board_metalbase_mat" (
-        active = true
-        prepend references = @board_metalbase_mat.usda@
-    )
-    {
-        float3 xformOp:scale = (1, 1, 1)
-        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
-    }
-
     def "board_window_mat" (
         active = true
         prepend references = @board_window_mat.usda@
     )
     {
-        float2 ui:nodegraph:realitykit:subgraphOutputs:size = (181.5, 99)
+    }
 
-        over "PreviewSurface"
-        {
-            float2 ui:nodegraph:node:size = (148.5, 199)
-        }
+    def "chipped_paint_board_mat" (
+        active = true
+        prepend references = @chipped_paint_board_mat.usda@
+    )
+    {
+    }
+
+    def "board_metalbase_mat" (
+        active = true
+        references = @board_metalbase_mat.usda@
+    )
+    {
     }
 }
 

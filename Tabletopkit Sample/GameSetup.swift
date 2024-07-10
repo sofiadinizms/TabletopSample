@@ -13,6 +13,7 @@ import Spatial
 
 enum GameMetrics {
     static let tableEdge: Float = 0.7
+    static let tableThickness: Float = 0.0146
     static let playerAreaDistanceFromCenter: Float = 0.29
     static let boardEdge: Float = 0.4
     static let smallHeight: Float = 0.001
@@ -72,8 +73,7 @@ class GameSetup {
      */
     init(root: Entity) {
         self.root = root
-        let table: Tabletop = .rectangular(width: GameMetrics.tableEdge, height: GameMetrics.tableEdge, thickness: 0)
-        setup = TableSetup(table: table)
+        setup = TableSetup(tabletop: Table())
 
         for (index, pose) in PlayerSeat.seatPoses.enumerated() {
             let seat = PlayerSeat(id: TableSeatIdentifier(index), pose: pose)
@@ -104,10 +104,10 @@ class GameSetup {
         for tileConfig in ConveyorTile.tiles {
             // Transform from a pose on a unit square to an absolute pose in the table's coordinate space.
             let positionX = (tileConfig.0.x - 0.5) * ConveyorTile.positionScale
-            let positionY = (tileConfig.0.y - 0.5) * ConveyorTile.positionScale
+            let positionY = (tileConfig.0.z - 0.5) * ConveyorTile.positionScale
             let tile = ConveyorTile(id: EquipmentIdentifier(self.idGenerator.newId()),
                                     boardID: board.id,
-                                    position: .init(x: positionX, y: positionY),
+                                    position: .init(x: positionX, z: positionY),
                                     category: tileConfig.1)
             setup.add(equipment: tile)
         }
@@ -154,17 +154,18 @@ class GameSetup {
 }
 
 extension Game {
+    @MainActor
     func resetGame() {
         // Move pawns back to their starting location.
         for pawn in setup.pawns {
-            tabletopGame.addAction(.moveEquipment(pawn, childOf: nil, pose: pawn.initialState.pose))
+            tabletopGame.addAction(.moveEquipment(matching: pawn.id, childOf: .tableID, pose: pawn.initialState.pose))
         }
 
         // Shuffle cards and return them to the stockpile, face down, controlled by any seat.
         let cardsShuffled = setup.cards.shuffled()
         for card in cardsShuffled {
             tabletopGame.addAction(.updateEquipment(card, faceUp: false, seatControl: .any))
+            tabletopGame.addAction(.moveEquipment(matching: card.id, childOf: setup.cardStockGroup.id))
         }
-        tabletopGame.addAction(.moveEquipment(cardsShuffled, childOf: setup.cardStockGroup))
     }
 }
