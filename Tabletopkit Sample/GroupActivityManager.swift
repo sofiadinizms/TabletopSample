@@ -23,7 +23,7 @@ class GroupActivityManager: Observable {
     
     init(tabletopGame: TabletopGame) {
         self.tabletopGame = tabletopGame
-        sessionTask = Task.detached { @MainActor in
+        sessionTask = Task { @MainActor in
             for await session in Activity.sessions() {
                 tabletopGame.coordinateWithSession(session)
             }

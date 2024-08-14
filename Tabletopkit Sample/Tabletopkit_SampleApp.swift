@@ -38,7 +38,7 @@ struct GameView: View {
                     content.entities.append(loadedGame.renderer.root)
                     content.add(loadedGame.renderer.portalWorld)
                     content.add(loadedGame.renderer.portal)
-                }.toolbar {
+                }.toolbar() {
                     GameToolbar(game: loadedGame)
                 }.tabletopGame(loadedGame.tabletopGame, parent: loadedGame.renderer.root) { _ in
                     GameInteraction(game: loadedGame)

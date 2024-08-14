@@ -11,7 +11,7 @@ struct GameInteraction: TabletopInteraction.Delegate {
     let game: Game
     
     @MainActor
-    mutating func updateCursor(_ proposedDestination: EquipmentIdentifier?, valid: Bool = false) {
+    func updateCursor(_ proposedDestination: EquipmentIdentifier?, valid: Bool = false) {
         if let proposedDestination, let tile = game.tabletopGame.equipment(of: ConveyorTile.self, matching: proposedDestination) {
             // Transform the tile position into table space and place the cursor there.
             let boardToTable = game.setup.board.initialState.pose
@@ -26,7 +26,7 @@ struct GameInteraction: TabletopInteraction.Delegate {
     }
 
     mutating func update(interaction: TabletopKit.TabletopInteraction) {
-        self.updateCursor(interaction.value.proposedDestination?.equipmentID)
+        var destination = interaction.value.proposedDestination?.equipmentID
         
         if interaction.value.phase == .started {
             onPhaseStarted(interaction: interaction)
@@ -37,13 +37,13 @@ struct GameInteraction: TabletopInteraction.Delegate {
         }
 
         if interaction.value.phase == .ended {
-            // When the interaction is over, turn off the cursor.
-            self.updateCursor(nil)
+            destination = nil
             onPhaseEnded(interaction: interaction)
         }
+        
+        game.renderer.updateCursor(destination)
     }
     
-    @MainActor
     func onPhaseStarted(interaction: TabletopInteraction) {
         if game.tabletopGame.equipment(of: PlayerPawn.self, matching: interaction.value.startingEquipmentID) != nil {
             // Only allow pawns to move to conveyor tiles.
@@ -74,13 +74,14 @@ struct GameInteraction: TabletopInteraction.Delegate {
         }
     }
     
-    @MainActor
     func onGesturePhaseEnded(interaction: TabletopInteraction) {
         if let die = game.tabletopGame.equipment(of: Die.self, matching: interaction.value.startingEquipmentID) {
             // Play a sound when a player tosses a die.
-            if let audioLibraryComponent = die.entity.components[AudioLibraryComponent.self] {
-                if let soundResource = audioLibraryComponent.resources["dieSoundShort.mp3"] {
-                    die.entity.playAudio(soundResource)
+            Task { @MainActor in
+                if let audioLibraryComponent = die.entity.components[AudioLibraryComponent.self] {
+                    if let soundResource = audioLibraryComponent.resources["dieSoundShort.mp3"] {
+                        die.entity.playAudio(soundResource)
+                    }
                 }
             }
             // Pick a random value for the result of the die toss and toss the die.
@@ -92,7 +93,6 @@ struct GameInteraction: TabletopInteraction.Delegate {
         }
     }
     
-    @MainActor
     func onPhaseEnded(interaction: TabletopInteraction) {
         /* If there isn't a proposed destination, there's nothing to do here.
          Objects moving back to their original group animate there smoothly by default. */

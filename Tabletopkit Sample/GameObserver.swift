@@ -50,24 +50,10 @@ class GameObserver: TabletopGame.Observer {
             renderer.playAnimationForTile(category: category, cuteBotColor: color)
         }
     }
-
-    @MainActor
-    func playAnimationForTile(category: ConveyorTile.Category, cuteBotColor: PlayerPawn.CuteBotColor) {
-        let cuteBotEntity = renderer.cuteBotEntity(for: cuteBotColor)
-        switch category {
-            case .green:
-                if let celebrate = renderer.getAnimation(entity: cuteBotEntity, animation: .jumpJoy),
-                   let idle = renderer.getAnimation(entity: cuteBotEntity, animation: .idleA) {
-                    renderer.playAnimation(entity: cuteBotEntity, animation: try! .sequence(with: [celebrate, idle.repeat()]))
-                }
-            case .grey:
-                // Just keep idling.
-                break
-            case .red:
-                if let sad = renderer.getAnimation(entity: cuteBotEntity, animation: .sad),
-                   let idle = renderer.getAnimation(entity: cuteBotEntity, animation: .idleA) {
-                    renderer.playAnimation(entity: cuteBotEntity, animation: try! .sequence(with: [sad, idle.repeat()]))
-                }
+    
+    func playerChangedSeats(_ player: Player, oldSeat: (any TableSeat)?, newSeat: (any TableSeat)?, snapshot: TableSnapshot) {
+        if player.id == tabletop.localPlayer.id, newSeat == nil {
+            tabletop.claimAnySeat()
         }
     }
 }

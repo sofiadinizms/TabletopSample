@@ -167,7 +167,7 @@ struct PlayerPawn: EntityEquipment {
         case sad
     }
 
-    enum CuteBotColor {
+    enum CuteBotColor: Sendable {
         case red
         case purple
         case blue

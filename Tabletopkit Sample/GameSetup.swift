@@ -26,9 +26,9 @@ enum GameMetrics {
 class GameSetup {
     let root: Entity
     var setup: TableSetup
-    var board: Board
+    let board: Board
     var cardStockGroup: CardStockGroup
-    var counter: ScoreCounter
+    let counter: ScoreCounter
     var pawns: [PlayerPawn] = []
     var cards: [Card] = []
     var seats: [PlayerSeat] = []
