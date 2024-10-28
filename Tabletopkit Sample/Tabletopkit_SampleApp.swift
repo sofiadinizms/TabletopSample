@@ -36,8 +36,8 @@ struct GameView: View {
             if let loadedGame = game, activityManager != nil {
                 RealityView { (content: inout RealityViewContent) in
                     content.entities.append(loadedGame.renderer.root)
-                    content.add(loadedGame.renderer.portalWorld)
-                    content.add(loadedGame.renderer.portal)
+//                    content.add(loadedGame.renderer.portalWorld)
+//                    content.add(loadedGame.renderer.portal)
                 }.toolbar() {
                     GameToolbar(game: loadedGame)
                 }.tabletopGame(loadedGame.tabletopGame, parent: loadedGame.renderer.root) { _ in
